@@ -10,102 +10,94 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PapaParse para CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- SheetJS para Excel opcional -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        /* Color personalizado RGB(21, 58, 101) -> #153A65 */
+        .bg-custom-header { background-color: rgb(21, 58, 101); }
+        .text-custom-header { color: rgb(21, 58, 101); }
+        .border-custom-header { border-color: rgb(21, 58, 101); }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
 
-    <!-- Header -->
-    <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
+    <!-- Header con color RGB(21, 58, 101) -->
+    <header class="bg-custom-header text-white shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 p-3 rounded-lg shadow-inner">
-                    <i class="fa-solid fa-book-bookmark text-2xl"></i>
+                <div class="bg-white/10 p-3 rounded-lg shadow-inner border border-white/20">
+                    <i class="fa-solid fa-book-bookmark text-2xl text-amber-400"></i>
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-wide">Base de Datos de Revistas Indizadas</h1>
-                    <p class="text-xs text-indigo-200">Revistas recomendadas para la publicación de Articulos Científicos</p>
+                    <p class="text-xs text-slate-200">Universidad Andina del Cusco & Producción Científica Perú</p>
                 </div>
             </div>
-            <div id="status-badge" class="flex items-center gap-2 text-xs bg-amber-800 px-3 py-1.5 rounded-full border border-amber-700">
-                <i class="fa-solid fa-sync fa-spin text-amber-300" id="status-icon"></i>
-                <span id="status-text">Sincronizando con Google Sheets...</span>
+            <div class="flex items-center gap-3">
+                <button onclick="loadDataFromGoogleSheets()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-lg transition shadow flex items-center gap-2">
+                    <i class="fa-solid fa-rotate text-xs"></i>
+                    <span>Actualizar Datos</span>
+                </button>
+                <div id="status-badge" class="flex items-center gap-2 text-xs bg-slate-900/60 px-3 py-1.5 rounded-full border border-white/20">
+                    <i class="fa-solid fa-sync fa-spin text-amber-300" id="status-icon"></i>
+                    <span id="status-text">Sincronizando...</span>
+                </div>
             </div>
         </div>
     </header>
 
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- CONEXIÓN AUTOMÁTICA CON GOOGLE SHEETS -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-cloud-arrow-down text-indigo-600 text-lg"></i> Conexión Automática en Vivo
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Sincronizado directamente con tu Google Sheet. Cualquier cambio hecho en la hoja se reflejará aquí automáticamente.</p>
-                </div>
-                <div class="w-full md:w-auto flex items-center gap-2">
-                    <button onclick="loadDataFromGoogleSheets()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition shadow flex items-center justify-center gap-2 w-full md:w-auto">
-                        <i class="fa-solid fa-rotate text-sm"></i>
-                        <span>Actualizar Datos Ahora</span>
-                    </button>
-                    <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2.5 rounded-lg transition border border-slate-300 flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Cargar Archivo Local</span>
-                        <input type="file" id="file-input" accept=".csv, .xlsx, .xls" class="hidden" onchange="handleFileUpload(event)">
-                    </label>
-                </div>
+        <!-- BOTONES DE ÁREAS TEMÁTICAS SUPERIORES -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-custom-header text-sm"></i> Áreas Temáticas
+                </h2>
+                <span class="text-[11px] text-slate-400">Selecciona un área para filtrar rápidamente</span>
+            </div>
+            <div id="area-buttons-container" class="flex flex-wrap gap-2 pt-1">
+                <!-- Se genera dinámicamente -->
             </div>
         </div>
 
-        <!-- FILTROS -->
+        <!-- PANEL DE FILTROS INTERCONECTADOS -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-filter text-indigo-600"></i> Panel de Filtros Interconectados
+                <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-filter text-custom-header text-sm"></i> Filtros Adicionales Interconectados
                 </h2>
-                <button onclick="resetFilters()" class="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">
-                    <i class="fa-solid fa-rotate-left mr-1"></i> Restablecer Filtros
+                <button onclick="resetFilters()" class="text-xs font-semibold text-custom-header bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> Restablecer Todos los Filtros
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Buscar palabra clave</label>
-                    <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Ej. Medicina, Revista..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Área Temática</label>
-                    <select id="filter-area" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="">Todas las Áreas</option>
-                    </select>
+                    <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Ej. Medicina, Revista..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400">
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Cuartil (SJR)</label>
-                    <select id="filter-cuartil" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="filter-cuartil" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400">
                         <option value="">Todos los Cuartiles</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Modelo de Costo (APC)</label>
-                    <select id="filter-apc" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="filter-apc" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400">
                         <option value="">Todos los modelos</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">UAndina / Perú</label>
-                    <select id="filter-uandina" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="filter-uandina" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400">
                         <option value="">Todas las Opciones</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">País</label>
-                    <select id="filter-pais" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="filter-pais" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400">
                         <option value="">Todos los Países</option>
                     </select>
                 </div>
@@ -115,7 +107,7 @@
         <!-- TABLA -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-600">Mostrando <span id="visible-count" class="text-indigo-600 font-extrabold">0</span> revistas</span>
+                <span class="font-bold text-slate-600">Mostrando <span id="visible-count" class="text-custom-header font-extrabold text-sm">0</span> revistas</span>
                 <span class="text-slate-400 text-[11px]">Haz clic en "Ir" para abrir la web oficial de la revista</span>
             </div>
             <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
@@ -146,6 +138,7 @@
     <script>
         const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8ET-hPpNnD-0sS73XqQc4a6yhmN7rSqpWCXpEEUIe4ZRs1b3lGE7W0LeioIVp_kHorICBao7SMVUT/pub?output=csv";
         let currentData = [];
+        let selectedArea = ""; // Guarda el área temática seleccionada con los botones
 
         document.addEventListener("DOMContentLoaded", () => {
             loadDataFromGoogleSheets();
@@ -167,7 +160,7 @@
                     complete: function(results) {
                         if (results.data && results.data.length > 0) {
                             currentData = normalizeKeys(results.data);
-                            setBadges("emerald", "fa-circle-check", `Google Sheets En Vivo (${currentData.length} Revistas)`);
+                            setBadges("emerald", "fa-circle-check", `En vivo: ${currentData.length} Revistas`);
                             initApp(currentData);
                         } else {
                             throw new Error("El archivo CSV está vacío.");
@@ -176,53 +169,15 @@
                 });
             } catch (error) {
                 console.warn("Error cargando Google Sheets:", error);
-                setBadges("rose", "fa-triangle-exclamation", "Fallo al conectar con Google Sheets");
+                setBadges("rose", "fa-triangle-exclamation", "Error al conectar con Google Sheets");
                 renderTable([]);
             }
         }
 
         function setBadges(color, icon, text) {
             const badge = document.getElementById("status-badge");
-            badge.className = `flex items-center gap-2 text-xs bg-${color}-800 px-3 py-1.5 rounded-full border border-${color}-700 text-white`;
-            badge.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${text}</span>`;
-        }
-
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const filename = file.name.toLowerCase();
-
-            if (filename.endsWith(".csv")) {
-                Papa.parse(file, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        processNewData(results.data, file.name);
-                    }
-                });
-            } else if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                    processNewData(jsonData, file.name);
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        }
-
-        function processNewData(data, fileName) {
-            if (!data || data.length === 0) {
-                alert("El archivo subido está vacío o no tiene un formato válido.");
-                return;
-            }
-            currentData = normalizeKeys(data);
-            setBadges("indigo", "fa-file-csv", `Archivo Local: ${fileName} (${currentData.length} revistas)`);
-            initApp(currentData);
+            badge.className = `flex items-center gap-2 text-xs bg-black/30 px-3 py-1.5 rounded-full border border-white/20 text-white`;
+            badge.innerHTML = `<i class="fa-solid ${icon} text-amber-300"></i> <span>${text}</span>`;
         }
 
         function normalizeKeys(data) {
@@ -260,6 +215,7 @@
         }
 
         function initApp(data) {
+            updateAreaButtons();
             updateDropdownOptions();
             applyFilters();
         }
@@ -267,7 +223,7 @@
         function getActiveFilterValues() {
             return {
                 search: (document.getElementById("filter-search").value || "").toLowerCase().trim(),
-                area: document.getElementById("filter-area").value,
+                area: selectedArea,
                 cuartil: document.getElementById("filter-cuartil").value,
                 apc: document.getElementById("filter-apc").value,
                 uandina: document.getElementById("filter-uandina").value,
@@ -302,6 +258,48 @@
             return true;
         }
 
+        function updateAreaButtons() {
+            const filters = getActiveFilterValues();
+            const container = document.getElementById("area-buttons-container");
+            container.innerHTML = "";
+
+            // Obtener las áreas disponibles considerando los otros filtros (excepto area)
+            const subset = currentData.filter(item => itemMatchesFilters(item, filters, 'area'));
+            const areas = [...new Set(subset.map(i => i["Área Temática (SCImago)"]))].filter(Boolean).sort();
+
+            // Botón "Todas las Áreas"
+            const allBtn = document.createElement("button");
+            const isAllActive = !selectedArea;
+            allBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
+                isAllActive 
+                ? 'bg-custom-header text-white border-custom-header shadow-sm' 
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+            }`;
+            allBtn.innerHTML = `<i class="fa-solid fa-border-all mr-1.5 text-[10px]"></i>Todas (${subset.length})`;
+            allBtn.onclick = () => selectArea("");
+            container.appendChild(allBtn);
+
+            // Botones individuales de cada área
+            areas.forEach(a => {
+                const count = subset.filter(i => i["Área Temática (SCImago)"] === a).length;
+                const btn = document.createElement("button");
+                const isActive = selectedArea === a;
+                btn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
+                    isActive 
+                    ? 'bg-custom-header text-white border-custom-header shadow-sm' 
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`;
+                btn.textContent = `${a} (${count})`;
+                btn.onclick = () => selectArea(a);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectArea(areaName) {
+            selectedArea = areaName;
+            applyFilters();
+        }
+
         function updateDropdownOptions() {
             const filters = getActiveFilterValues();
 
@@ -309,7 +307,6 @@
                 const select = document.getElementById(elementId);
                 const currentSelected = select.value;
 
-                // Subset matching all filters EXCEPT the one being populated
                 const subset = currentData.filter(item => itemMatchesFilters(item, filters, excludeKey));
                 const uniqueValues = [...new Set(subset.map(i => i[fieldName]))].filter(Boolean).sort();
 
@@ -328,7 +325,6 @@
                 }
             }
 
-            populateSelect("filter-area", "Área Temática (SCImago)", "area", "Todas las Áreas");
             populateSelect("filter-cuartil", "Cuartil", "cuartil", "Todos los Cuartiles");
             populateSelect("filter-apc", "Tipo APC", "apc", "Todos los modelos");
             populateSelect("filter-uandina", "Destacada UAndina/Perú", "uandina", "Todas las Opciones");
@@ -336,6 +332,7 @@
         }
 
         function applyFilters() {
+            updateAreaButtons();
             updateDropdownOptions();
             const filters = getActiveFilterValues();
 
@@ -344,13 +341,14 @@
         }
 
         function resetFilters() {
+            selectedArea = "";
             document.getElementById("filter-search").value = "";
-            document.getElementById("filter-area").value = "";
             document.getElementById("filter-cuartil").value = "";
             document.getElementById("filter-apc").value = "";
             document.getElementById("filter-uandina").value = "";
             document.getElementById("filter-pais").value = "";
             
+            updateAreaButtons();
             updateDropdownOptions();
             renderTable(currentData);
         }
@@ -367,7 +365,7 @@
 
             data.forEach(item => {
                 const tr = document.createElement("tr");
-                tr.className = "hover:bg-indigo-50/50 transition-colors";
+                tr.className = "hover:bg-slate-50 transition-colors";
 
                 let cuartilBadge = "";
                 const q = (item["Cuartil"] || "").toUpperCase();
@@ -391,7 +389,7 @@
 
                 tr.innerHTML = `
                     <td class="p-3 font-medium text-slate-900 border-b max-w-[150px] truncate" title="${item["Área Temática (SCImago)"]}">${item["Área Temática (SCImago)"]}</td>
-                    <td class="p-3 font-semibold text-indigo-900 border-b max-w-[200px]" title="${item["Revista"]}">${item["Revista"]}</td>
+                    <td class="p-3 font-semibold text-custom-header border-b max-w-[200px]" title="${item["Revista"]}">${item["Revista"]}</td>
                     <td class="p-3 text-center border-b">${cuartilBadge}</td>
                     <td class="p-3 border-b">${apcBadge}</td>
                     <td class="p-3 text-center font-mono text-slate-600 border-b">${item["Costo (USD)"]}</td>
@@ -399,7 +397,7 @@
                     <td class="p-3 border-b">${destacadaBadge}</td>
                     <td class="p-3 border-b max-w-[240px] text-[11px] text-slate-500 leading-tight truncate" title="${item["Requisitos y Enfoque"]}">${item["Requisitos y Enfoque"]}</td>
                     <td class="p-3 text-center border-b">
-                        <a href="${url}" target="_blank" class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-2.5 py-1 rounded text-[10px] transition shadow-sm">
+                        <a href="${url}" target="_blank" class="inline-flex items-center gap-1 bg-custom-header hover:opacity-90 text-white font-medium px-2.5 py-1 rounded text-[10px] transition shadow-sm">
                             <span>Ir</span> <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
                         </a>
                     </td>
@@ -410,4 +408,5 @@
     </script>
 </body>
 </html>
+
 
