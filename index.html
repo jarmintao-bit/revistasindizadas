@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-wide">Base de Datos de Revistas Indizadas</h1>
-                    <p class="text-xs text-indigo-200">Universidad Andina del Cusco & Producción Científica Perú</p>
+                    <p class="text-xs text-indigo-200">Revistas recomendadas para publicar articulos cietíficos</p>
                 </div>
             </div>
             <div id="status-badge" class="flex items-center gap-2 text-xs bg-amber-800 px-3 py-1.5 rounded-full border border-amber-700">
@@ -67,14 +67,14 @@
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-filter text-indigo-600"></i> Panel de Filtros Interactivos
+                    <i class="fa-solid fa-filter text-indigo-600"></i> Panel de Filtros Interconectados
                 </h2>
                 <button onclick="resetFilters()" class="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">
                     <i class="fa-solid fa-rotate-left mr-1"></i> Restablecer Filtros
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Buscar palabra clave</label>
                     <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Ej. Medicina, Revista..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -89,19 +89,18 @@
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Cuartil (SJR)</label>
                     <select id="filter-cuartil" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="">Todos los Cuartiles</option>
-                        <option value="Q1">Q1</option>
-                        <option value="Q2">Q2</option>
-                        <option value="Q3">Q3</option>
-                        <option value="Q4">Q4</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Modelo de Costo (APC)</label>
                     <select id="filter-apc" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="">Todos los modelos</option>
-                        <option value="Diamante">No (Vía Diamante - $0)</option>
-                        <option value="Híbrida">Híbrida Gratis</option>
-                        <option value="APC">Sí (APC con cobro)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">UAndina / Perú</label>
+                    <select id="filter-uandina" onchange="applyFilters()" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Todas las Opciones</option>
                     </select>
                 </div>
                 <div>
@@ -145,9 +144,7 @@
 
     <!-- LOGICA JAVASCRIPT -->
     <script>
-        // URL DIRECTA DE TU GOOGLE SHEET
         const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8ET-hPpNnD-0sS73XqQc4a6yhmN7rSqpWCXpEEUIe4ZRs1b3lGE7W0LeioIVp_kHorICBao7SMVUT/pub?output=csv";
-
         let currentData = [];
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -156,8 +153,6 @@
 
         async function loadDataFromGoogleSheets() {
             setBadges("amber", "fa-sync fa-spin", "Sincronizando con Google Sheets...");
-
-            // Anti-cache: añade timestamp para asegurar datos en tiempo real
             const freshUrl = GOOGLE_SHEET_CSV_URL + "&_t=" + new Date().getTime();
 
             try {
@@ -265,57 +260,86 @@
         }
 
         function initApp(data) {
-            populateDropdowns(data);
+            updateDropdownOptions();
             applyFilters();
         }
 
-        function populateDropdowns(data) {
-            const areaSelect = document.getElementById("filter-area");
-            const selectedArea = areaSelect.value;
-            areaSelect.innerHTML = '<option value="">Todas las Áreas</option>';
-            const areas = [...new Set(data.map(i => i["Área Temática (SCImago)"]))].filter(Boolean).sort();
-            areas.forEach(a => {
-                const opt = document.createElement("option");
-                opt.value = a;
-                opt.textContent = a;
-                areaSelect.appendChild(opt);
-            });
-            if (areas.includes(selectedArea)) areaSelect.value = selectedArea;
-
-            const paisSelect = document.getElementById("filter-pais");
-            const selectedPais = paisSelect.value;
-            paisSelect.innerHTML = '<option value="">Todos los Países</option>';
-            const paises = [...new Set(data.map(i => i["País"]))].filter(Boolean).sort();
-            paises.forEach(p => {
-                const opt = document.createElement("option");
-                opt.value = p;
-                opt.textContent = p;
-                paisSelect.appendChild(opt);
-            });
-            if (paises.includes(selectedPais)) paisSelect.value = selectedPais;
+        function getActiveFilterValues() {
+            return {
+                search: (document.getElementById("filter-search").value || "").toLowerCase().trim(),
+                area: document.getElementById("filter-area").value,
+                cuartil: document.getElementById("filter-cuartil").value,
+                apc: document.getElementById("filter-apc").value,
+                uandina: document.getElementById("filter-uandina").value,
+                pais: document.getElementById("filter-pais").value
+            };
         }
 
-        function applyFilters() {
-            const searchVal = document.getElementById("filter-search").value.toLowerCase();
-            const areaVal = document.getElementById("filter-area").value;
-            const cuartilVal = document.getElementById("filter-cuartil").value;
-            const apcVal = document.getElementById("filter-apc").value;
-            const paisVal = document.getElementById("filter-pais").value;
-
-            const filtered = currentData.filter(item => {
+        function itemMatchesFilters(item, filters, excludeKey = null) {
+            if (excludeKey !== 'search' && filters.search) {
                 const name = (item["Revista"] || "").toLowerCase();
                 const area = (item["Área Temática (SCImago)"] || "").toLowerCase();
                 const req = (item["Requisitos y Enfoque"] || "").toLowerCase();
+                if (!name.includes(filters.search) && !area.includes(filters.search) && !req.includes(filters.search)) {
+                    return false;
+                }
+            }
+            if (excludeKey !== 'area' && filters.area) {
+                if (item["Área Temática (SCImago)"] !== filters.area) return false;
+            }
+            if (excludeKey !== 'cuartil' && filters.cuartil) {
+                if (item["Cuartil"] !== filters.cuartil) return false;
+            }
+            if (excludeKey !== 'apc' && filters.apc) {
+                if (item["Tipo APC"] !== filters.apc) return false;
+            }
+            if (excludeKey !== 'uandina' && filters.uandina) {
+                if (item["Destacada UAndina/Perú"] !== filters.uandina) return false;
+            }
+            if (excludeKey !== 'pais' && filters.pais) {
+                if (item["País"] !== filters.pais) return false;
+            }
+            return true;
+        }
 
-                const matchSearch = !searchVal || name.includes(searchVal) || area.includes(searchVal) || req.includes(searchVal);
-                const matchArea = !areaVal || item["Área Temática (SCImago)"] === areaVal;
-                const matchCuartil = !cuartilVal || item["Cuartil"].toUpperCase().includes(cuartilVal.toUpperCase());
-                const matchAPC = !apcVal || item["Tipo APC"].toLowerCase().includes(apcVal.toLowerCase());
-                const matchPais = !paisVal || item["País"] === paisVal;
+        function updateDropdownOptions() {
+            const filters = getActiveFilterValues();
 
-                return matchSearch && matchArea && matchCuartil && matchAPC && matchPais;
-            });
+            function populateSelect(elementId, fieldName, excludeKey, defaultLabel) {
+                const select = document.getElementById(elementId);
+                const currentSelected = select.value;
 
+                // Subset matching all filters EXCEPT the one being populated
+                const subset = currentData.filter(item => itemMatchesFilters(item, filters, excludeKey));
+                const uniqueValues = [...new Set(subset.map(i => i[fieldName]))].filter(Boolean).sort();
+
+                select.innerHTML = `<option value="">${defaultLabel}</option>`;
+                uniqueValues.forEach(val => {
+                    const opt = document.createElement("option");
+                    opt.value = val;
+                    opt.textContent = val;
+                    select.appendChild(opt);
+                });
+
+                if (uniqueValues.includes(currentSelected)) {
+                    select.value = currentSelected;
+                } else {
+                    select.value = "";
+                }
+            }
+
+            populateSelect("filter-area", "Área Temática (SCImago)", "area", "Todas las Áreas");
+            populateSelect("filter-cuartil", "Cuartil", "cuartil", "Todos los Cuartiles");
+            populateSelect("filter-apc", "Tipo APC", "apc", "Todos los modelos");
+            populateSelect("filter-uandina", "Destacada UAndina/Perú", "uandina", "Todas las Opciones");
+            populateSelect("filter-pais", "País", "pais", "Todos los Países");
+        }
+
+        function applyFilters() {
+            updateDropdownOptions();
+            const filters = getActiveFilterValues();
+
+            const filtered = currentData.filter(item => itemMatchesFilters(item, filters));
             renderTable(filtered);
         }
 
@@ -324,8 +348,11 @@
             document.getElementById("filter-area").value = "";
             document.getElementById("filter-cuartil").value = "";
             document.getElementById("filter-apc").value = "";
+            document.getElementById("filter-uandina").value = "";
             document.getElementById("filter-pais").value = "";
-            applyFilters();
+            
+            updateDropdownOptions();
+            renderTable(currentData);
         }
 
         function renderTable(data) {
@@ -334,7 +361,7 @@
             tbody.innerHTML = "";
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>Cargando o no se encontraron datos.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>No se encontraron resultados con los filtros seleccionados.</td></tr>`;
                 return;
             }
 
@@ -383,3 +410,4 @@
     </script>
 </body>
 </html>
+
