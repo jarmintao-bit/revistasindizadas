@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revistas Indizadas</title>
+    <title>Base de Datos de Revistas Indizadas</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -29,8 +29,8 @@
                     <i class="fa-solid fa-book-bookmark text-2xl text-amber-400"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-wide">Revistas Indizadas</h1>
-                    <p class="text-xs text-slate-200">Recomendación de revistas para la publicación de Artículos Científicos</p>
+                    <h1 class="text-xl font-bold tracking-wide">Base de Datos de Revistas Indizadas</h1>
+                    <p class="text-xs text-slate-200">Universidad Andina del Cusco & Producción Científica Perú</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -57,6 +57,19 @@
                 <span class="text-[11px] text-slate-400">Selecciona un área para filtrar rápidamente</span>
             </div>
             <div id="area-buttons-container" class="flex flex-wrap gap-2 pt-1">
+                <!-- Se genera dinámicamente -->
+            </div>
+        </div>
+
+        <!-- BOTONES DE BASE DE DATOS / INDIZACIÓN (Debajo del área temática) -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-database text-custom-header text-sm"></i> Base de Datos / Indización
+                </h2>
+                <span class="text-[11px] text-slate-400">Filtra por la base de datos o indización requerida</span>
+            </div>
+            <div id="db-buttons-container" class="flex flex-wrap gap-2 pt-1">
                 <!-- Se genera dinámicamente -->
             </div>
         </div>
@@ -116,6 +129,7 @@
                         <tr>
                             <th class="p-3 border-b">Área Temática</th>
                             <th class="p-3 border-b">Revista</th>
+                            <th class="p-3 border-b">Base de Datos</th>
                             <th class="p-3 border-b text-center">Cuartil</th>
                             <th class="p-3 border-b">Modelo APC</th>
                             <th class="p-3 border-b text-center">Costo USD</th>
@@ -138,7 +152,8 @@
     <script>
         const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8ET-hPpNnD-0sS73XqQc4a6yhmN7rSqpWCXpEEUIe4ZRs1b3lGE7W0LeioIVp_kHorICBao7SMVUT/pub?output=csv";
         let currentData = [];
-        let selectedArea = ""; // Guarda el área temática seleccionada con los botones
+        let selectedArea = ""; 
+        let selectedDb = ""; 
 
         document.addEventListener("DOMContentLoaded", () => {
             loadDataFromGoogleSheets();
@@ -190,7 +205,8 @@
 
                     if (cleanKey.match(/área|area/i)) newItem["Área Temática (SCImago)"] = val;
                     else if (cleanKey.match(/^revista|nombre/i)) newItem["Revista"] = val;
-                    else if (cleanKey.match(/enlace|url|link|web/i)) newItem["Enlace a la Revista"] = val;
+                    else if (cleanKey.match(/base de datos|indizac/i)) newItem["Base de Datos"] = val;
+                    else if (cleanKey.match(/enlace|url|link|web|direcci/i)) newItem["Enlace a la Revista"] = val;
                     else if (cleanKey.match(/destacada|frecuente|uandina|perú|peru/i)) newItem["Destacada UAndina/Perú"] = val;
                     else if (cleanKey.match(/cuartil|sjr/i)) newItem["Cuartil"] = val;
                     else if (cleanKey.match(/apc|tipo|modelo/i)) newItem["Tipo APC"] = val;
@@ -202,6 +218,7 @@
                 
                 if (!newItem["Área Temática (SCImago)"]) newItem["Área Temática (SCImago)"] = "General";
                 if (!newItem["Revista"]) newItem["Revista"] = "Sin Nombre";
+                if (!newItem["Base de Datos"]) newItem["Base de Datos"] = "Scopus / SciELO";
                 if (!newItem["Cuartil"]) newItem["Cuartil"] = "Q4";
                 if (!newItem["Tipo APC"]) newItem["Tipo APC"] = "No (Vía Diamante)";
                 if (!newItem["Costo (USD)"]) newItem["Costo (USD)"] = "$0";
@@ -216,6 +233,7 @@
 
         function initApp(data) {
             updateAreaButtons();
+            updateDbButtons();
             updateDropdownOptions();
             applyFilters();
         }
@@ -224,6 +242,7 @@
             return {
                 search: (document.getElementById("filter-search").value || "").toLowerCase().trim(),
                 area: selectedArea,
+                db: selectedDb,
                 cuartil: document.getElementById("filter-cuartil").value,
                 apc: document.getElementById("filter-apc").value,
                 uandina: document.getElementById("filter-uandina").value,
@@ -235,13 +254,17 @@
             if (excludeKey !== 'search' && filters.search) {
                 const name = (item["Revista"] || "").toLowerCase();
                 const area = (item["Área Temática (SCImago)"] || "").toLowerCase();
+                const db = (item["Base de Datos"] || "").toLowerCase();
                 const req = (item["Requisitos y Enfoque"] || "").toLowerCase();
-                if (!name.includes(filters.search) && !area.includes(filters.search) && !req.includes(filters.search)) {
+                if (!name.includes(filters.search) && !area.includes(filters.search) && !db.includes(filters.search) && !req.includes(filters.search)) {
                     return false;
                 }
             }
             if (excludeKey !== 'area' && filters.area) {
                 if (item["Área Temática (SCImago)"] !== filters.area) return false;
+            }
+            if (excludeKey !== 'db' && filters.db) {
+                if (!(item["Base de Datos"] || "").includes(filters.db)) return false;
             }
             if (excludeKey !== 'cuartil' && filters.cuartil) {
                 if (item["Cuartil"] !== filters.cuartil) return false;
@@ -263,11 +286,9 @@
             const container = document.getElementById("area-buttons-container");
             container.innerHTML = "";
 
-            // Obtener las áreas disponibles considerando los otros filtros (excepto area)
             const subset = currentData.filter(item => itemMatchesFilters(item, filters, 'area'));
             const areas = [...new Set(subset.map(i => i["Área Temática (SCImago)"]))].filter(Boolean).sort();
 
-            // Botón "Todas las Áreas"
             const allBtn = document.createElement("button");
             const isAllActive = !selectedArea;
             allBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
@@ -279,7 +300,6 @@
             allBtn.onclick = () => selectArea("");
             container.appendChild(allBtn);
 
-            // Botones individuales de cada área
             areas.forEach(a => {
                 const count = subset.filter(i => i["Área Temática (SCImago)"] === a).length;
                 const btn = document.createElement("button");
@@ -295,8 +315,49 @@
             });
         }
 
+        function updateDbButtons() {
+            const filters = getActiveFilterValues();
+            const container = document.getElementById("db-buttons-container");
+            container.innerHTML = "";
+
+            const mainDbs = ["Scopus", "WoS", "SciELO", "Latindex", "Redalyc"];
+            const subset = currentData.filter(item => itemMatchesFilters(item, filters, 'db'));
+
+            const allBtn = document.createElement("button");
+            const isAllActive = !selectedDb;
+            allBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
+                isAllActive 
+                ? 'bg-custom-header text-white border-custom-header shadow-sm' 
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+            }`;
+            allBtn.innerHTML = `<i class="fa-solid fa-layer-group mr-1.5 text-[10px]"></i>Todas las Bases (${subset.length})`;
+            allBtn.onclick = () => selectDb("");
+            container.appendChild(allBtn);
+
+            mainDbs.forEach(db => {
+                const count = subset.filter(i => (i["Base de Datos"] || "").includes(db)).length;
+                if (count > 0 || selectedDb === db) {
+                    const btn = document.createElement("button");
+                    const isActive = selectedDb === db;
+                    btn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
+                        isActive 
+                        ? 'bg-custom-header text-white border-custom-header shadow-sm' 
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                    }`;
+                    btn.textContent = `${db} (${count})`;
+                    btn.onclick = () => selectDb(db);
+                    container.appendChild(btn);
+                }
+            });
+        }
+
         function selectArea(areaName) {
             selectedArea = areaName;
+            applyFilters();
+        }
+
+        function selectDb(dbName) {
+            selectedDb = dbName;
             applyFilters();
         }
 
@@ -333,6 +394,7 @@
 
         function applyFilters() {
             updateAreaButtons();
+            updateDbButtons();
             updateDropdownOptions();
             const filters = getActiveFilterValues();
 
@@ -342,6 +404,7 @@
 
         function resetFilters() {
             selectedArea = "";
+            selectedDb = "";
             document.getElementById("filter-search").value = "";
             document.getElementById("filter-cuartil").value = "";
             document.getElementById("filter-apc").value = "";
@@ -349,6 +412,7 @@
             document.getElementById("filter-pais").value = "";
             
             updateAreaButtons();
+            updateDbButtons();
             updateDropdownOptions();
             renderTable(currentData);
         }
@@ -359,7 +423,7 @@
             tbody.innerHTML = "";
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400"><i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>No se encontraron resultados con los filtros seleccionados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400"><i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>No se encontraron resultados con los filtros seleccionados.</td></tr>`;
                 return;
             }
 
@@ -388,14 +452,19 @@
                 if (!url.startsWith("http") && url !== "#") url = "https://" + url;
 
                 tr.innerHTML = `
-                    <td class="p-3 font-medium text-slate-900 border-b max-w-[150px] truncate" title="${item["Área Temática (SCImago)"]}">${item["Área Temática (SCImago)"]}</td>
-                    <td class="p-3 font-semibold text-custom-header border-b max-w-[200px]" title="${item["Revista"]}">${item["Revista"]}</td>
+                    <td class="p-3 font-medium text-slate-900 border-b max-w-[140px] truncate" title="${item["Área Temática (SCImago)"]}">${item["Área Temática (SCImago)"]}</td>
+                    <td class="p-3 font-semibold text-custom-header border-b max-w-[180px]" title="${item["Revista"]}">${item["Revista"]}</td>
+                    <td class="p-3 border-b">
+                        <span class="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded text-[10px] font-medium inline-block">
+                            ${item["Base de Datos"]}
+                        </span>
+                    </td>
                     <td class="p-3 text-center border-b">${cuartilBadge}</td>
                     <td class="p-3 border-b">${apcBadge}</td>
                     <td class="p-3 text-center font-mono text-slate-600 border-b">${item["Costo (USD)"]}</td>
                     <td class="p-3 border-b">${item["País"]}</td>
                     <td class="p-3 border-b">${destacadaBadge}</td>
-                    <td class="p-3 border-b max-w-[240px] text-[11px] text-slate-500 leading-tight truncate" title="${item["Requisitos y Enfoque"]}">${item["Requisitos y Enfoque"]}</td>
+                    <td class="p-3 border-b max-w-[220px] text-[11px] text-slate-500 leading-tight truncate" title="${item["Requisitos y Enfoque"]}">${item["Requisitos y Enfoque"]}</td>
                     <td class="p-3 text-center border-b">
                         <a href="${url}" target="_blank" class="inline-flex items-center gap-1 bg-custom-header hover:opacity-90 text-white font-medium px-2.5 py-1 rounded text-[10px] transition shadow-sm">
                             <span>Ir</span> <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
@@ -408,5 +477,3 @@
     </script>
 </body>
 </html>
-
-
